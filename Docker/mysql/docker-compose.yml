@@ -1,0 +1,27 @@
+# バージョンは省略 (latest)
+# 公式が非推奨
+
+services:
+  mysql:
+    # ベースイメージはDockerfileに記載
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    # コンテナ名は任意（省略可）
+    container_name: mysql
+    # コンテナの再起動設定
+    # dockerデーモンとOSホストの再起動時にコンテナも再起動
+    restart: always
+    # 環境変数
+    env_file:
+      - .env_file
+    # ポートフォワード
+    # ホストのポート:コンテナのポート
+    ports:
+      - 3311:3306
+    # マウント
+    # ホストのディレクトリ:コンテナのディレクトリ
+    volumes:
+      - ./settings/initdb.d:/docker-entrypoint-initdb.d
+      - ./data:/var/lib/mysql
+      - ./logs:/var/log/mysql
