@@ -1,0 +1,30 @@
+テンプレート
+
+\begin{wrapfigure}{position}[overhang]{width}
+  \centering
+ \includegraphics[width=5cm]{figure.jpg}
+ \caption{caption}
+\end{wrapfigure}
+
+
+図のまわりに文章をまわりこませるにはwrapfig環境を用いる。以下は図を左側、文章を右側に配置した例となる。
+
+\begin{wrapfigure}{l}[0pt]{0.5\textwidth}
+ \centering
+   \includegraphics[width=8cm]{figures/arcTo.png}
+ \caption{Arcの作図}
+ \label{fig:arc2}
+\end{wrapfigure}
+
+\LaTeX の入門~\cite{latex_intro}がお勧め!
+数学公式は~\cite{abramowitz}がお勧め!
+\TeX を参考書は~\cite{jtexbook}がお勧め!
+
+温度の単位はマクロで生成T=10\degC \par
+微分記号dをローマン体に変更するマクロ\verb|\dfd|
+\begin{eqnarray}
+& &\frac{dx}{dt}\quad (italic) \\
+& &\frac{\dfd x}{\dfd t}\quad (roman)
+\end{eqnarray}
+
+逆にpositionをlにすることで図が左、文章が右になるように回り込ませている。
