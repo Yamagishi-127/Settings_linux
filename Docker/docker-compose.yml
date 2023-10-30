@@ -3,7 +3,7 @@ service:
     image: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD:mysql
+      MYSQL_ROOT_PASSWORD: mysql
       MYSQL_PORT: 3306
     ports:
       -3306:3306
