@@ -1,0 +1,126 @@
+   SELECT 
+        CASE ID.shipping_class
+            WHEN '元払' THEN 1
+            WHEN '着払' THEN 2
+            WHEN '小口' THEN 3
+            WHEN '貸切' THEN 4
+            WHEN '区域' THEN 5
+            WHEN '倉庫' THEN 6
+            WHEN '鉄道' THEN 7
+            WHEN '到着' THEN 8
+            ELSE 9
+        END as order_seq,
+        ID.shipping_date,
+        CASE /* 追加要望対応(管理番号) */
+            WHEN MC.is_displayed_slip_number = 1
+            THEN ID.pickup_slip_number
+            ELSE NULL
+        END AS pickup_slip_number,
+        ID.shipping_class,
+        ID.consignee_name,
+        ID.consignee_address,
+        ID.shipment_quantity,
+        CASE
+            WHEN IDB.weight = 0 OR MC.is_display_weight = 0 THEN NULL
+            ELSE IDB.weight
+        END AS weight,
+        CASE /* 追加要望対応(明細項目加算1: 明細) */
+            WHEN MC.insurance_basic_charge_addtion = 1 AND IDB.basic_charge + IDB.insurance != 0 THEN IDB.basic_charge + IDB.insurance
+            WHEN MC.insurance_basic_charge_addtion = 0 AND IDB.basic_charge != 0 THEN IDB.basic_charge
+            ELSE NULL
+        END AS basic_charge,
+        CASE
+            WHEN IDB.relay_charge = 0 THEN NULL
+            ELSE IDB.relay_charge
+        END AS relay_charge,
+        CASE
+            WHEN IDB.pickup_charge +
+            IDB.delivery_charge +
+            IDB.surcharge_origin +
+            IDB.surcharge_destination +
+            IDB.surcharge_winter +
+            IDB.shipping_charge +
+            IDB.toll_charge +
+            IDB.cash_on_delivery +
+            IDB.other_charge +
+            IDB.replacement_charge +
+            IDB.consumption_tax = 0 THEN NULL
+            ELSE IDB.pickup_charge +
+            IDB.delivery_charge +
+            IDB.surcharge_origin +
+            IDB.surcharge_destination +
+            IDB.surcharge_winter +
+            IDB.shipping_charge +
+            IDB.toll_charge +
+            IDB.cash_on_delivery +
+            IDB.other_charge +
+            IDB.replacement_charge +
+            IDB.consumption_tax
+        END AS misc_expense,
+        CASE /* 追加要望対応(明細項目加算1: 明細) */
+            WHEN IDB.insurance = 0 OR (SELECT insurance_basic_charge_addtion FROM M_CLIENT WHERE M_CLIENT.client_id = ID.recipient_code) = 1 THEN NULL
+            ELSE IDB.insurance
+        END AS insurance,
+        CASE
+            WHEN IDB.total = 0 THEN NULL
+            ELSE IDB.total
+        END AS total,
+        CASE/* 追加要望対応(備考) */
+            WHEN (SELECT is_displayed_remarks_article FROM M_CLIENT WHERE M_CLIENT.client_id = ID.recipient_code) = 0 THEN NULL
+            ELSE ID.remarks_article
+        END AS remarks_article
+    FROM (
+        SELECT
+        shipping_class,
+        shipping_date,
+        pickup_slip_number,
+        consignee_name,
+        consignee_address,
+        CASE
+            WHEN shipment_quantity = 0 THEN NULL
+            ELSE shipment_quantity
+        END AS shipment_quantity,
+        remarks_article
+        FROM T_INVOICE_DETAIL
+        INNER JOIN(
+            SELECT
+                client_id,
+                type_detail_aggregation,
+                is_displayed_remarks_article,
+                is_displayed_slip_number,
+                is_taxable_insurance,
+                insurance_basic_charge_addtion,
+                is_all_aggregation,
+                type_detail_order,
+                should_round_up_consumption_tax,
+                should_round_up_other_tax
+            FROM M_CLIENT
+        ) MC ON MC.client_id = ID.recipient_code
+        INNER JOIN (/* 明細料金内訳 */
+            SELECT
+            invoice_detail_id,
+            invoice_detail_class,
+            IFNULL(basic_charge, 0) as basic_charge,
+            IFNULL(relay_charge, 0) as relay_charge,
+            IFNULL(pickup_charge, 0) as pickup_charge,
+            IFNULL(delivery_charge, 0) as delivery_charge,
+            IFNULL(surcharge_origin, 0) as surcharge_origin,
+            IFNULL(surcharge_destination, 0) as surcharge_destination,
+            IFNULL(surcharge_winter, 0) as surcharge_winter,
+            IFNULL(shipping_charge, 0) as shipping_charge,
+            IFNULL(toll_charge, 0) as toll_charge,
+            IFNULL(insurance, 0) as insurance,
+            IFNULL(cash_on_delivery, 0) as cash_on_delivery,
+            IFNULL(other_charge, 0) as other_charge,
+            IFNULL(replacement_charge, 0) as replacement_charge,
+            IFNULL(consumption_tax, 0) as consumption_tax,
+            IFNULL(total, 0) as total,
+            IFNULL(weight, 0) as weight
+            FROM
+            T_INVOICE_DETAIL_BREAKDOWN
+        ) IDB ON ID.invoice_detail_id = IDB.invoice_detail_id
+    )
+    WHERE
+        ID.recipient_code = /*?*/888 AND 
+        ID.shipping_date BETWEEN /*?*/'1000/1/1' AND /*?*/'5005/1/1' AND 
+        IDB.invoice_detail_class = 1
